@@ -7,7 +7,7 @@ Each user still needs (once): the JobHarvest extension (v3.10.0+) in Edge/Chrome
 browser. The LinkedIn reading happens in their browser, as their account; the website only stores and shows results.
 
 ## 1. Database: Neon (free, data kept permanently)
-1. Sign up at https://neon.tech -> **New project** (region: AWS Singapore / closest to you).
+1. Sign up at https://neon.tech -> **New project** (region: AWS US East 2 (Ohio) - render.yaml puts the web service in Ohio too; keep them in the same region).
 2. Dashboard -> **Connect** -> copy the connection string
    (`postgresql://user:password@ep-....neon.tech/neondb?sslmode=require`). Keep it secret.
    Tables are created automatically on first start.

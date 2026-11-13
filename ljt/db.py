@@ -138,7 +138,7 @@ class PgDB:
     def _run(self, q, params):
         cur = self.conn.cursor()
         try:
-            cur.execute(q, params or None)
+            cur.execute(q, tuple(params or ()))
             return _Rows(cur)
         finally:
             cur.close()
