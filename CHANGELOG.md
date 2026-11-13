@@ -25,6 +25,8 @@ All changes made on 2026-11-13 (times IST), newest last. Version = browser exten
 | 15:54 | `9d99f64` | 3.10.3 | Skip LinkedIn's padding ("may not be exact matches") unless the card shows the wanted workplace |
 | 16:14 | `eca7d6c` | 3.11.0 | **Fast mode**: LinkedIn's public job pages fetched in parallel (10 jobs ~6 s, 50 jobs ~45 s, was 1.5-5 min) |
 | 16:22 | `7779d0e` | | Fast mode also saves the job poster as hiring contact when the job shows one |
+| | `df9a7bd` | | Render refuses to start without a PostgreSQL `DATABASE_URL` (no silent temporary database) |
+| | (this) | 3.11.1 | Start keeps you in the dashboard: the LinkedIn window opens in the background (still comes to the front on a LinkedIn warning); extra reading windows closed at the end |
 
 ## Where it runs
 - **Local**: `python app.py` -> http://127.0.0.1:5000, data in `output/signedin.sqlite3`.

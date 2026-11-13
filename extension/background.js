@@ -102,10 +102,13 @@ async function navigate(tabId, url) {
   return loaded;
 }
 
-async function openLinkedInWindow() {
-  const win = await chrome.windows.create({ url: "about:blank", focused: true, type: "normal", width: 1300, height: 900 });
+// The main LinkedIn window opens BEHIND the dashboard: you stay in JobHarvest while the run works in the background.
+// (A LinkedIn warning still brings it to the front - see stopForWarning.)
+async function openLinkedInWindow(dashboardWindowId) {
+  const win = await chrome.windows.create({ url: "about:blank", focused: false, type: "normal", width: 1300, height: 900 });
   const tabId = win.tabs[0].id;
   try { await chrome.tabs.update(tabId, { autoDiscardable: false }); } catch {}
+  if (dashboardWindowId) await chrome.windows.update(dashboardWindowId, { focused: true }).catch(() => {});
   return tabId;
 }
 
@@ -642,6 +645,7 @@ async function runLoop(rid, tabId) {
     running = null;
     const { workerTabs } = await chrome.storage.session.get("workerTabs");
     for (const t of workerTabs || []) await chrome.tabs.remove(t).catch(() => {});   // no reader window left open
+    fallbackTab = null;                                                              // (it was one of them)
     await chrome.storage.session.remove(["activeRun", "tabId", "workerTabs"]);
   }
 }
@@ -657,7 +661,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
     chrome.storage.local.set({ dashboard: origin });
     // Answer at once (the dashboard must not wait on the window); problems after this go to the run log.
     reply({ ok: true });
-    openLinkedInWindow().then(tabId => runLoop(msg.runId, tabId), async e => {
+    openLinkedInWindow(_sender.tab && _sender.tab.windowId).then(tabId => runLoop(msg.runId, tabId), async e => {
       await log(msg.runId, "Could not open the LinkedIn window: " + e.message);
       await api(`/stop/${msg.runId}`, {}).catch(() => {});
     });
