@@ -27,7 +27,7 @@ All changes made on 2026-11-13 (times IST), newest last. Version = browser exten
 | 16:22 | `7779d0e` | | Fast mode also saves the job poster as hiring contact when the job shows one |
 | | `df9a7bd` | | Render refuses to start without a PostgreSQL `DATABASE_URL` (no silent temporary database) |
 | | `e699d5d` | 3.11.1 | Start keeps you in the dashboard: the LinkedIn window opens in the background (still comes to the front on a LinkedIn warning); extra reading windows closed at the end |
-| | (next) | | Dashboard tells users when their extension is older than the one the server ships ("Update available" + download and steps); runs still work |
+| | `e7fa385` | | Dashboard tells users when their extension is older than the one the server ships ("Update available" + download and steps); runs still work |
 
 ## Where it runs
 - **Local**: `python app.py` -> http://127.0.0.1:5000, data in `output/signedin.sqlite3`.
