@@ -26,7 +26,7 @@ All changes made on 2026-11-13 (times IST), newest last. Version = browser exten
 | 16:14 | `eca7d6c` | 3.11.0 | **Fast mode**: LinkedIn's public job pages fetched in parallel (10 jobs ~6 s, 50 jobs ~45 s, was 1.5-5 min) |
 | 16:22 | `7779d0e` | | Fast mode also saves the job poster as hiring contact when the job shows one |
 | | `df9a7bd` | | Render refuses to start without a PostgreSQL `DATABASE_URL` (no silent temporary database) |
-| | (this) | 3.11.1 | Start keeps you in the dashboard: the LinkedIn window opens in the background (still comes to the front on a LinkedIn warning); extra reading windows closed at the end |
+| | `e699d5d` | 3.11.1 | Start keeps you in the dashboard: the LinkedIn window opens in the background (still comes to the front on a LinkedIn warning); extra reading windows closed at the end |
 
 ## Where it runs
 - **Local**: `python app.py` -> http://127.0.0.1:5000, data in `output/signedin.sqlite3`.
@@ -34,5 +34,5 @@ All changes made on 2026-11-13 (times IST), newest last. Version = browser exten
 - Extension: one install serves both; it reports to whichever dashboard pressed Start.
 
 ## Tests
-105 offline tests (`python -m pytest -q`). `TEST_DATABASE_URL` runs them on PostgreSQL - only ever on a throwaway
+106 offline tests (`python -m pytest -q`). `TEST_DATABASE_URL` runs them on PostgreSQL - only ever on a throwaway
 database or Neon branch (they drop the tables).
