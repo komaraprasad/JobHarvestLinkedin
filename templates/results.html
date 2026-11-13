@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JobHarvest Results</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2310b981'/%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>try{const t=localStorage.getItem("jh-theme");if(t)document.documentElement.dataset.theme=t;}catch{}</script>
+<style>
+:root{
+  --bg:#070b16;--card:#111a2e;--ink:#e8edf7;--muted:#8b97b0;--line:rgba(148,163,184,.14);--line2:rgba(148,163,184,.24);--soft:rgba(148,163,184,.08);
+  --brand:#10b981;--brand-ink:#04150f;--brand-soft:rgba(16,185,129,.14);--grad:linear-gradient(135deg,#10b981 0%,#14b8a6 50%,#22d3ee 100%);
+  --warn:#fbbf24;--warn-soft:rgba(251,191,36,.12);--shadow:0 20px 50px -20px rgba(0,0,0,.6);
+}
+:root[data-theme="light"]{
+  --bg:#f3f6fb;--card:#fff;--ink:#0f1729;--muted:#55627a;--line:rgba(15,23,42,.09);--line2:rgba(15,23,42,.16);--soft:rgba(15,23,42,.04);
+  --brand:#059669;--brand-ink:#fff;--brand-soft:rgba(5,150,105,.1);--warn:#a35f00;--warn-soft:#fff3dc;--shadow:0 12px 32px -12px rgba(16,24,40,.16);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 Inter,"Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--brand)}
+header{display:flex;align-items:center;gap:14px;padding:16px 24px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:20}
+header .logo{font-weight:800;font-size:18px;text-decoration:none;color:var(--ink)}header .logo b{color:var(--brand)}
+header .back{margin-left:auto;padding:8px 14px;border:1px solid var(--line2);border-radius:10px;text-decoration:none;color:var(--ink);font-weight:600;font-size:13px}
+header .theme{padding:8px 10px;border:1px solid var(--line2);border-radius:10px;background:transparent;color:var(--ink);cursor:pointer}
+main{max-width:1400px;margin:0 auto;padding:24px 16px 60px}
+h1{font-size:26px;margin:0 0 4px}.lead{color:var(--muted);margin:0 0 20px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.row{display:grid;grid-template-columns:2fr 1.3fr auto auto;gap:12px;align-items:end}
+.row2{display:grid;grid-template-columns:repeat(5,1fr) auto;gap:12px;align-items:end;margin-top:14px}
+label{display:block;font-size:12.5px;font-weight:600;margin-bottom:6px}
+input,select{width:100%;padding:11px 12px;border:1px solid var(--line2);border-radius:10px;background:var(--soft);color:var(--ink);font:inherit}
+input:focus,select:focus{outline:2px solid var(--brand);outline-offset:-1px}
+.sugg{position:absolute;z-index:30;left:0;right:0;top:100%;margin:6px 0 0;padding:5px;list-style:none;background:var(--card);border:1px solid var(--line2);border-radius:12px;box-shadow:var(--shadow)}.sugg:empty{display:none}.sugg li{padding:9px 11px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:8px}.sugg li.on,.sugg li:hover{background:var(--brand-soft)}.sugg li small{color:var(--muted);font-size:11px}
+.ico{position:relative}.ico svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted)}.ico input{padding-left:38px}
+.btn{padding:11px 16px;border-radius:10px;border:0;font:inherit;font-weight:600;cursor:pointer;white-space:nowrap;display:inline-flex;gap:8px;align-items:center}
+.btn.pri{background:var(--grad);color:var(--brand-ink)}.btn.sec{background:transparent;border:1px solid var(--line2);color:var(--ink)}
+.dates{display:flex;gap:6px}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0 12px}
+.stat{padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--card);font-size:13px}.stat b{color:var(--brand)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:3px 9px;border-radius:999px;background:var(--brand-soft);color:var(--brand);font-size:11.5px;font-weight:600;white-space:nowrap}
+.chip.w{background:var(--soft);color:var(--muted)}
+.tbl{overflow:auto;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:1100px}
+th{position:sticky;top:0;background:var(--card);text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:11px 12px;border-bottom:1px solid var(--line2);cursor:pointer;user-select:none;white-space:nowrap}
+th.g{border-left:2px solid var(--line2)}
+td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top;font-size:13px}
+td.g{border-left:2px solid var(--line2)}
+tr:hover td{background:var(--soft)}
+tr.open td{background:var(--brand-soft)}
+.t{font-weight:600}.sub{color:var(--muted);font-size:12px}
+.ppl a{display:block;white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis;font-size:12.5px}
+.none{color:var(--muted);font-size:12px}
+.detail td{background:var(--soft);font-size:12.5px;color:var(--muted);white-space:pre-wrap}
+.empty{padding:50px;text-align:center;color:var(--muted);border:1px dashed var(--line2);border-radius:14px}
+.pager{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:12px;color:var(--muted);font-size:13px}
+@media (max-width:900px){.row,.row2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="/">Job<b>Harvest</b></a>
+  <span class="sub">Results</span>
+  <a class="back" href="/">← New harvest</a>
+  <button class="theme" id="theme" title="Light / dark">◐</button>
+</header>
+<main>
+  <h1>All results</h1>
+  <p class="lead">Every job collected so far, from all your searches. Filter, open a row for details, and download exactly what you see.</p>
+
+  <div class="panel">
+    <div class="row">
+      <div><label for="q">Search</label><div class="ico">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" placeholder="Job title, company, industry or description…"></div></div>
+      <div><label for="loc">Location</label><div class="ico">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>
+        <input id="loc" autocomplete="off" placeholder="e.g. Bengaluru, India"><ul class="sugg" id="locSugg" role="listbox"></ul></div></div>
+      <button class="btn pri" id="xlsx">⬇ Excel</button>
+      <button class="btn sec" id="csv">CSV</button>
+    </div>
+    <div class="row2">
+      <div><label for="role">Searched role</label><select id="role"><option value="">Any</option></select></div>
+      <div><label for="wp">Workplace</label><select id="wp"><option value="">Any</option><option>Remote</option><option>Hybrid</option><option>On-site</option></select></div>
+      <div><label for="ct">Hiring contact</label><select id="ct"><option value="">Any</option><option value="y">Has a profile link</option><option value="n">No contact</option></select></div>
+      <div><label for="size">Company size</label><select id="size"><option value="">Any</option><option value="s">Up to 200</option><option value="m">201 – 5,000</option><option value="l">5,001+</option><option value="none">Not known</option></select></div>
+      <div><label>Collected</label><div class="dates"><input type="date" id="d1" title="From"><input type="date" id="d2" title="To"></div></div>
+      <button class="btn sec" id="reset">Clear</button>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+  <div id="out"></div>
+  <div class="pager" id="pager"></div>
+</main>
+
+<form id="dl" method="post" style="display:none"><input type="hidden" name="ids" id="ids"></form>
+
+<script>
+const $ = id => document.getElementById(id);
+const el = (t, txt, cls) => { const e = document.createElement(t); if (txt != null) e.textContent = txt; if (cls) e.className = cls; return e; };
+let all = [], shown = [], page = 0, sortKey = "first_found", sortDir = -1, openId = null;
+const PER = 50;
+
+function sizeBand(s) {
+  const n = parseInt(String(s || "").replace(/,/g, "").match(/\d+/) || [""], 10);
+  if (!s || isNaN(n)) return "none";
+  return n <= 200 && !/\+/.test(s) && !/^201/.test(s) ? "s" : n >= 5001 || /10,?001/.test(s) ? "l" : "m";
+}
+function apply() {
+  const q = $("q").value.trim().toLowerCase(), loc = $("loc").value.trim().toLowerCase();
+  const role = $("role").value, wp = $("wp").value, ct = $("ct").value, sz = $("size").value, d1 = $("d1").value, d2 = $("d2").value;
+  const locTerms = loc.split(/[,|]/).map(x => x.trim()).filter(Boolean).map(x => x === "bangalore" ? "bengaluru" : x);
+  shown = all.filter(r => {
+    if (q && !`${r.job_title} ${r.company_name} ${r.company_industry} ${r.description}`.toLowerCase().includes(q)) return false;
+    if (locTerms.length && !locTerms.some(t => r.location.toLowerCase().replace("bangalore", "bengaluru").includes(t))) return false;
+    if (role && !r.roles.includes(role)) return false;
+    if (wp && r.workplace !== wp) return false;
+    if (ct === "y" && !r.contact_profile_links) return false;
+    if (ct === "n" && r.contact_profile_links) return false;
+    if (sz && sizeBand(r.company_size) !== sz) return false;
+    const day = (r.first_found || "").slice(0, 10);
+    if (d1 && day < d1) return false;
+    if (d2 && day > d2) return false;
+    return true;
+  });
+  shown.sort((a, b) => String(a[sortKey] || "").localeCompare(String(b[sortKey] || ""), undefined, { numeric: true }) * sortDir);
+  page = 0; render();
+}
+function stats() {
+  const s = $("stats"); s.replaceChildren();
+  const n = shown.length, c = shown.filter(r => r.contact_profile_links).length, z = shown.filter(r => r.company_size).length;
+  const companies = new Set(shown.map(r => r.company_name)).size;
+  [[n, `of ${all.length} jobs`], [companies, "companies"], [c, "with hiring contact"], [z, "with company size"]].forEach(([v, t]) => {
+    const e = el("span", null, "stat"); e.appendChild(el("b", String(v))); e.appendChild(document.createTextNode(" " + t)); s.appendChild(e);
+  });
+}
+const COLS = [["job_title", "Job"], ["location", "Location"], ["workplace", "Workplace"], ["company_name", "Company", "g"],
+  ["company_industry", "Industry"], ["company_size", "Size"], ["contact_profile_links", "Hiring contact", "g"], ["roles", "Found by search"], ["first_found", "Collected"]];
+function render() {
+  stats();
+  const out = $("out"); out.replaceChildren();
+  if (!shown.length) { out.appendChild(el("div", all.length ? "No jobs match these filters." : "No jobs collected yet. Start a harvest first.", "empty")); $("pager").replaceChildren(); return; }
+  const wrap = el("div", null, "tbl"), t = el("table"), hr = el("tr");
+  COLS.forEach(([k, label, g]) => {
+    const th = el("th", label + (sortKey === k ? (sortDir > 0 ? " ▲" : " ▼") : ""), g || "");
+    th.onclick = () => { sortDir = sortKey === k ? -sortDir : 1; sortKey = k; apply(); };
+    hr.appendChild(th);
+  });
+  const thead = el("thead"); thead.appendChild(hr); t.appendChild(thead);
+  const tb = el("tbody");
+  shown.slice(page * PER, page * PER + PER).forEach(r => {
+    const tr = el("tr", null, openId === r.job_id ? "open" : "");
+    const td = (cls) => { const d = el("td", null, cls || ""); tr.appendChild(d); return d; };
+    let c = td(); const a = el("a", r.job_title || "(no title)", "t"); a.href = r.job_url; a.target = "_blank"; a.rel = "noopener"; c.appendChild(a);
+    c.appendChild(el("div", r.employment_type || "", "sub"));
+    td().textContent = r.location || "—";
+    c = td(); if (r.workplace) c.appendChild(el("span", r.workplace, "chip w")); else c.textContent = "—";
+    c = td("g"); if (r.company_url) { const ca = el("a", r.company_name); ca.href = r.company_url; ca.target = "_blank"; ca.rel = "noopener"; c.appendChild(ca); } else c.textContent = r.company_name;
+    td().textContent = r.company_industry || "—";
+    td().textContent = r.company_size || "—";
+    c = td("g ppl");
+    const links = (r.contact_profile_links || "").split("\n").filter(Boolean);
+    if (links.length) links.forEach(u => { const p = el("a", decodeURIComponent(u.replace(/\/$/, "").split("/in/")[1] || u)); p.href = u; p.target = "_blank"; p.rel = "noopener"; p.title = u; c.appendChild(p); });
+    else c.appendChild(el("span", "none shown", "none"));
+    c = td(); const ch = el("div", null, "chips"); r.roles.forEach(k => ch.appendChild(el("span", k, "chip"))); c.appendChild(ch);
+    td().textContent = (r.first_found || "").slice(0, 16).replace("T", " ");
+    tr.style.cursor = "pointer";
+    tr.onclick = e => { if (e.target.closest("a")) return; openId = openId === r.job_id ? null : r.job_id; render(); };
+    tb.appendChild(tr);
+    if (openId === r.job_id) {
+      const dr = el("tr", null, "detail"), dd = el("td"); dd.colSpan = COLS.length;
+      dd.textContent = (r.description ? r.description + (r.description.length >= 600 ? "…" : "") : "No description saved.") +
+        (r.data_notes ? "\n\nNotes: " + r.data_notes : "") + `\n\nJob ID ${r.job_id} · last seen ${(r.last_seen || "").slice(0, 16).replace("T", " ")}`;
+      dr.appendChild(dd); tb.appendChild(dr);
+    }
+  });
+  t.appendChild(tb); wrap.appendChild(t); out.appendChild(wrap);
+  const pages = Math.ceil(shown.length / PER), pg = $("pager"); pg.replaceChildren();
+  if (pages > 1) {
+    const prev = el("button", "← Prev", "btn sec"), next = el("button", "Next →", "btn sec");
+    prev.disabled = page === 0; next.disabled = page >= pages - 1;
+    prev.onclick = () => { page--; render(); scrollTo(0, 0); }; next.onclick = () => { page++; render(); scrollTo(0, 0); };
+    pg.append(prev, el("span", `Page ${page + 1} of ${pages}`), next);
+  }
+}
+function download(kind) {
+  if (!shown.length) return alert("Nothing to download: no jobs match these filters.");
+  $("ids").value = shown.map(r => r.job_id).join(","); $("dl").action = `/api/ext/export_ids.${kind}`; $("dl").submit();
+}
+$("xlsx").onclick = () => download("xlsx"); $("csv").onclick = () => download("csv");
+let tmr; ["q", "loc"].forEach(id => $(id).addEventListener("input", () => { clearTimeout(tmr); tmr = setTimeout(apply, 150); }));
+["role", "wp", "ct", "size", "d1", "d2"].forEach(id => $(id).addEventListener("change", apply));
+$("reset").onclick = () => { ["q", "loc", "role", "wp", "ct", "size", "d1", "d2"].forEach(id => $(id).value = ""); apply(); };
+$("theme").onclick = () => { const r = document.documentElement, n = r.dataset.theme === "light" ? "dark" : "light"; r.dataset.theme = n; try { localStorage.setItem("jh-theme", n); } catch {} };
+(async () => {
+  const d = await (await fetch("/api/ext/results")).json();
+  all = d.rows; d.roles.forEach(k => { const o = el("option", k); o.value = k; $("role").appendChild(o); });
+  const r = new URLSearchParams(location.search).get("role"); if (r) $("role").value = r;
+  apply();
+})();
+
+// Location suggestions: same source as the search form (/api/ext/locations/suggest). Picking one filters by the
+// place itself (first part, e.g. "Hyderabad" from "Hyderabad, Telangana, India"), not by its whole region.
+(() => {
+  const inp = $("loc"), box = $("locSugg"); let items = [], on = -1, t;
+  const close = () => { box.innerHTML = ""; items = []; on = -1; };
+  const show = () => { box.innerHTML = ""; items.forEach((s, i) => { const li = document.createElement("li"); li.className = i === on ? "on" : "";
+    li.textContent = s.text; const sm = document.createElement("small"); sm.textContent = s.id ? "LinkedIn region" : ""; li.appendChild(sm);
+    li.onmousedown = e => { e.preventDefault(); pick(s); }; box.appendChild(li); }); };
+  const pick = s => { inp.value = s.text.split(",")[0].trim(); close(); apply(); };
+  inp.addEventListener("input", () => { clearTimeout(t); const q = inp.value.trim(); if (q.length < 2) return close();
+    t = setTimeout(async () => { try { const r = await (await fetch("/api/ext/locations/suggest?q=" + encodeURIComponent(q))).json();
+      if (inp.value.trim() === q) { items = r.slice(0, 8); on = -1; show(); } } catch { close(); } }, 120); });
+  inp.addEventListener("keydown", e => { if (!items.length) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); on = (on + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length; show(); }
+    else if (e.key === "Enter" && on >= 0) { e.preventDefault(); pick(items[on]); } else if (e.key === "Escape") close(); });
+  inp.addEventListener("blur", () => setTimeout(close, 100));
+})();
+</script>
+</body>
+</html>

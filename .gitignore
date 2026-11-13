@@ -1,0 +1,13 @@
+# Local data and builds - never commit collected jobs (personal data) or environments
+.venv/
+__pycache__/
+.pytest_cache/
+output/
+dist/
+build/
+*.spec
+*.sqlite3*
+backups/
+*.zip
+.claude/
+.env

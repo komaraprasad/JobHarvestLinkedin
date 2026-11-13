@@ -1,0 +1,8 @@
+{
+  "manifest_version": 3,
+  "name": "LinkedIn Jobs Saver (manual)",
+  "version": "1.0.0",
+  "description": "Saves the LinkedIn job you are viewing when you click Save, and exports saved jobs to Excel/CSV. Never browses or sends requests by itself.",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "action": { "default_title": "Save this LinkedIn job", "default_popup": "popup.html" }
+}

@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "JobHarvest",
+  "version": "3.10.0",
+  "description": "Works with the local JobHarvest dashboard: opens your LinkedIn job search with the filters you chose, reads each job with pauses and strict limits, and returns the results for Excel/CSV export.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://www.linkedin.com/*",
+    "http://127.0.0.1:5000/*",
+    "http://localhost:5000/*",
+    "https://*.onrender.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://127.0.0.1:5000/*",
+        "http://localhost:5000/*",
+        "https://*.onrender.com/*"
+      ],
+      "js": [
+        "dashboard_bridge.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Save this LinkedIn job",
+    "default_popup": "popup.html"
+  }
+}
