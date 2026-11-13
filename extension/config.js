@@ -6,6 +6,11 @@ self.LJT_CONFIG = {
   // Using another host? Add it here AND to host_permissions + content_scripts.matches in manifest.json.
   DASHBOARDS: [/^http:\/\/(127\.0\.0\.1|localhost):5000$/, /^https:\/\/[a-z0-9-]+\.onrender\.com$/],
   TAB_GROUP_TITLE: "JobHarvest",
+  // Fast mode (default): LinkedIn's public job pages fetched directly, several at once (see background.js).
+  // jobsAtOnce = parallel job pages; minGapMs = time between two requests (adaptive up to maxGapMs when LinkedIn
+  // answers 429). Measured 2026-11-13: 10 jobs ~6 s, 50 ~40 s, 100 ~100 s (LinkedIn allows ~2-3 requests/s).
+  // If LinkedIn keeps refusing, the run falls back to the LinkedIn window.
+  FAST: { enabled: true, jobsAtOnce: 6, companiesAtOnce: 5, minGapMs: 250, maxGapMs: 1200 },
   MAX_PARALLEL_TABS: 8,                          // upper limit when a run has many jobs to read
   PARALLEL_TABS: 3,                              // LinkedIn tabs reading jobs at the same time (1 = one at a time)
 

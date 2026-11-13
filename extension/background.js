@@ -477,6 +477,68 @@ async function nextAiPage(tabId) {
   return true; // list did not change in time; already-collected jobs are skipped, so nothing is read twice
 }
 
+// ---------- FAST MODE: LinkedIn's public job pages, fetched directly and in parallel (no windows, no rendering) ----------
+// Search (10 cards per request), job page (~0.7 s) and company page (~1 s) are plain HTML that the server parses
+// (ljt/guest.py). Fetched WITHOUT cookies from this browser (your own connection). On HTTP 429/5xx it waits and retries;
+// if LinkedIn keeps refusing, the run switches back to the normal LinkedIn-window method.
+// One steady pace for ALL public requests (LinkedIn allows ~2-3 per second per connection; bursts get HTTP 429).
+// Each request takes the next free time slot; a 429 widens the gap, every success narrows it back to the minimum.
+const PACE = { gap: 0, next: 0 };
+async function slot() {
+  if (!PACE.gap) PACE.gap = C.FAST.minGapMs;
+  const now = Date.now(), at = Math.max(now, PACE.next);
+  PACE.next = at + PACE.gap;
+  if (at > now) await sleep(at - now);
+}
+async function guestFetch(url) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    await slot();
+    const r = await fetch(url, { credentials: "omit", headers: { "Accept": "text/html" } }).catch(() => null);
+    if (r && r.ok) { PACE.gap = Math.max(C.FAST.minGapMs, PACE.gap * 0.93); return await r.text(); }
+    if (r && r.status !== 429 && r.status < 500) return null;
+    if (r && r.status === 429) PACE.gap = Math.min(C.FAST.maxGapMs, PACE.gap * 1.6);
+    await sleep(800 * (attempt + 1));
+  }
+  return null;
+}
+async function pool(items, n, fn) {           // run fn over items with at most n at once
+  const queue = [...items];
+  await Promise.all(Array.from({ length: Math.min(n, queue.length) }, async (_, i) => {
+    await sleep(i * 120);
+    while (queue.length) { const it = queue.shift(); if (await fn(it) === "stop") queue.length = 0; }
+  }));
+}
+async function fastSearchPage(rid, t) {
+  const t0 = Date.now();
+  const htmls = await Promise.all(t.guest.urls.map(guestFetch));
+  if (!htmls.some(Boolean)) return null;                                   // refused -> caller falls back
+  const r = await api(`/guest_search/${rid}`, { page: t.page, htmls: htmls.filter(Boolean) });
+  await log(rid, `Result page ${t.page + 1} (fast): ${r.ids.length} jobs listed, ${r.read.length} to read, ${C.FAST.jobsAtOnce} at a time.`);
+  let n = 0, enough = false;
+  await pool(r.read, C.FAST.jobsAtOnce, async id => {
+    if (enough) return "stop";
+    const html = await guestFetch(t.guest.job_base + id);
+    const res = await api(`/guest_job/${rid}`, { job_id: id, html: html || "", card_location: (r.locations || {})[id] || "",
+                                                  error: html ? "" : "public job page did not load (LinkedIn refused)" });
+    n++;
+    if (!res.continue_) { enough = true; return "stop"; }
+  });
+  await api(`/page_done/${rid}`, { page: t.page, ids: r.ids, n_new: n, has_more: r.has_more && !enough });
+  await log(rid, `Result page ${t.page + 1} (fast): done in ${((Date.now() - t0) / 1000).toFixed(1)} s.`);
+  return {};
+}
+async function fastCompanies(rid, t) {
+  const batch = [t, ...(await api(`/more_companies/${rid}?k=${C.FAST.companiesAtOnce - 1}`).catch(() => []))];
+  await log(rid, `Reading ${batch.length} company page(s) at once (fast).`);
+  let refused = 0;
+  await pool(batch, C.FAST.companiesAtOnce, async c => {
+    const html = await guestFetch(c.guest_url);
+    if (!html) refused++;
+    await api(`/guest_company/${rid}`, { company_url: c.company_url, html: html || "", error: html ? "" : "public company page did not load" });
+  });
+  return refused === batch.length ? null : {};
+}
+
 async function runLoop(rid, tabId) {
   if (running) return;
   running = rid;
@@ -485,6 +547,7 @@ async function runLoop(rid, tabId) {
   // which used to cut a run off in the middle).
   const keepAlive = setInterval(() => chrome.runtime.getPlatformInfo(() => {}), 20000);
   let homeUrl = null, aiMode = !!(await chrome.storage.local.get("aiSearch")).aiSearch;
+  let fast = C.FAST && C.FAST.enabled;   // public pages first; the LinkedIn window is the fallback
   try {
     await log(rid, "Extension opened LinkedIn in a new window. Leave that window open (it can be behind other windows).");
     for (;;) {
@@ -494,6 +557,18 @@ async function runLoop(rid, tabId) {
         break;
       }
       if (t.type === "search" && t.page === 0) homeUrl = t.url;
+      if (fast && t.type === "search" && t.guest) {
+        if (await fastSearchPage(rid, t)) continue;
+        fast = false;
+        await log(rid, "Fast mode: LinkedIn did not answer the public job search, so this run continues in the LinkedIn window.");
+      }
+      if (fast && t.type === "company" && t.guest_url) {
+        if (await fastCompanies(rid, t)) continue;
+        fast = false;
+        await log(rid, "Fast mode: LinkedIn did not answer the public company pages, so this run continues in the LinkedIn window.");
+        await api(`/company_result/${rid}`, { company_url: t.company_url, data: { status: "error", note: "public page refused" } });
+        continue;
+      }
       // Company pages: read several at the same time (main tab + extra tabs), like the jobs.
       if (t.type === "company" && (C.PARALLEL_TABS || 1) > 1) {
         if (!(await chrome.tabs.get(tabId).catch(() => null))) { await tabClosed(rid); break; }

@@ -1,4 +1,4 @@
-# JobHarvest extension (v3.9.9)
+# JobHarvest extension (v3.11.0)
 
 The extension is the "hands" of the local JobHarvest dashboard (http://127.0.0.1:5000).
 You work in the dashboard; the extension does the LinkedIn part in your own signed-in browser.
@@ -6,7 +6,7 @@ You work in the dashboard; the extension does the LinkedIn part in your own sign
 ## Install (Edge or Chrome)
 1. Open `edge://extensions` (or `chrome://extensions`) and turn on **Developer mode**.
 2. **Load unpacked** and select this `extension` folder. Keep the folder.
-3. After an update: press **Reload** on the extension card, then reload the dashboard page (F5). The card must say **JobHarvest 3.9.9**.
+3. After an update: press **Reload** on the extension card, then reload the dashboard page (F5). The card must say **JobHarvest 3.11.0**.
 
 ## Use
 1. Start the dashboard: in the project folder `.venv\Scripts\python.exe app.py`, open http://127.0.0.1:5000.
@@ -53,3 +53,13 @@ Verified offline (2026-11-11) in Edge with this extension loaded, against **fake
 dashboard form → Start → new window with the filters in the address → 4 jobs clicked and read across 2 result
 pages → 3 companies read once → Excel/CSV. A security-check page stops the run at once. 14 server tests pass. Also verified on a fake page WITHOUT LinkedIn's classic class names (newer layout): jobs found from plain job links, details read from the "About the job" section.
 **Not verified:** real signed-in LinkedIn pages. Send the run log + the HTML of any field that comes out blank.
+
+## Fast mode (default since 3.11.0)
+Jobs are read from LinkedIn's lightweight public job pages instead of opening each job in a window:
+search (10 jobs per request), job page and company page are fetched directly from this browser, several at once,
+at one steady pace (~4 requests/s, slowing down automatically when LinkedIn answers "too many requests").
+Measured on real LinkedIn (2026-11-13): 10 jobs ~6 s, 50 jobs ~40 s, 100 jobs ~100 s - the limit is LinkedIn's
+rate per connection (~2-3 requests/s); every new job costs one request plus one per company not seen before.
+Not on public pages: hiring-team contacts and the Remote/Hybrid label (LinkedIn's own filter still applies).
+If LinkedIn refuses the public pages, the run continues automatically with the LinkedIn-window method.
+Settings: `FAST` in `config.js` (`enabled: false` turns it off).

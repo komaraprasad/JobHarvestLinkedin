@@ -13,7 +13,7 @@ import threading
 import uuid
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from . import clean, db
+from . import clean, db, guest
 from .place_search import job_in_places, saved_like_terms
 from .search import WORK_TYPE, SearchParams, _base_query, filter_mismatch, plain_query, ui_filters
 
@@ -25,7 +25,7 @@ COMPLETE = "description IS NOT NULL AND description != '' AND title IS NOT NULL 
 DEFAULT_LIMITS = {
     "max_jobs_per_run": 100,
     "max_search_pages_per_run": 6,
-    "max_company_pages_per_run": 60,
+    "max_company_pages_per_run": 100,   # one per job at most (fast mode reads them in parallel)
     "search_pages_per_day": 30,
     "job_pages_per_day": 300,
     "company_pages_per_day": 200,
@@ -219,7 +219,12 @@ class ExtStore:
                     return {"type": "search", "mode": "pane", "page": page, "known_ids": known,
                             "url": self.search_url(params, page, run["search_base"]),
                             "ai_url": f"{LINKEDIN}/jobs/search-results/?" + urlencode({"keywords": plain_query(params)}),
-                            "ui_filters": ui_filters(params)}
+                            "ui_filters": ui_filters(params),
+                            # Fast mode: LinkedIn's public job-search endpoint with the classic filters, 3 x 10 cards
+                            # per result "page"; the extension fetches these in parallel (ljt/guest.py parses them).
+                            "guest": {"urls": [guest.search_url(LINKEDIN, _base_query(params), page * 3 * guest.PER_REQUEST + k * guest.PER_REQUEST)
+                                               for k in range(3)],
+                                      "job_base": f"{LINKEDIN}{guest.GUEST_JOB}"}}
 
             if params.enrich_company:
                 comp = self._one("""SELECT DISTINCT j.company_url u FROM run_jobs r JOIN jobs j ON j.job_id=r.job_id
@@ -234,7 +239,8 @@ class ExtStore:
                     self._count(run_id, "company")
                     self.db.commit()
                     page = comp["u"].replace("https://www.linkedin.com", LINKEDIN, 1) + "about/"
-                    return {"type": "company", "company_url": comp["u"], "url": page}
+                    return {"type": "company", "company_url": comp["u"], "url": page,
+                            "guest_url": comp["u"].replace("https://www.linkedin.com", LINKEDIN, 1)}
 
             got = self.collected(run_id)
             return self._finish(run_id, "done", f"finished: {got} of {run['target']} jobs collected" +
@@ -262,7 +268,8 @@ class ExtStore:
                 self._count(run_id, "company")
                 self.db.commit()
                 out.append({"type": "company", "company_url": comp["u"],
-                            "url": comp["u"].replace("https://www.linkedin.com", LINKEDIN, 1) + "about/"})
+                            "url": comp["u"].replace("https://www.linkedin.com", LINKEDIN, 1) + "about/",
+                            "guest_url": comp["u"].replace("https://www.linkedin.com", LINKEDIN, 1)})
         return out
 
     # ---------- extension: results (each job is read from the detail panel after clicking its card) ----------
@@ -284,7 +291,8 @@ class ExtStore:
             seq = self._one("SELECT COALESCE(MAX(seq),0) s FROM run_jobs WHERE run_id=?", run_id)["s"] + 1
             d = data or {}
             mismatch = None if error else filter_mismatch(SearchParams.from_dict(json.loads(run["params"])),
-                                                          d.get("pane_tags"), d.get("location"))
+                                                          d.get("pane_tags"), d.get("location"),
+                                                          easy_apply_shown=d.get("source") != "guest")
             if mismatch:  # LinkedIn showed a job outside the requested filters: not saved, not counted
                 self.db.execute("INSERT INTO run_jobs VALUES (?,?, 'skipped', ?, ?)", (run_id, jid, mismatch[:200], seq))
                 self._count(run_id, "job")

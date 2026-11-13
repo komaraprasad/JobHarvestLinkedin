@@ -6,7 +6,7 @@ import re
 
 from flask import Blueprint, jsonify, request, send_file
 
-from . import export
+from . import export, guest
 from .extstore import ExtStore
 from .place_search import plan, suggest
 from .search import DATE_POSTED, EXPERIENCE, JOB_TYPE, SORT, WORK_TYPE, SearchParams
@@ -174,6 +174,47 @@ def create_blueprint(store: ExtStore, out_dir):
         b = body()
         go_on = store.add_card(rid, b.get("job_id"), b.get("data"), b.get("error")) if _ok_id(rid) else False
         return jsonify(continue_=go_on)
+
+    # ---------- fast mode: raw public pages fetched by the extension, parsed here (ljt/guest.py) ----------
+    @bp.post("/guest_search/<rid>")
+    def guest_search(rid):
+        b = body()
+        if not _ok_id(rid):
+            return jsonify(error="bad run id"), 400
+        pages = [str(h) for h in (b.get("htmls") or []) if h][:5]
+        cards, seen = [], set()
+        for h in pages:
+            for c in guest.parse_search(h):
+                if c["id"] not in seen:
+                    seen.add(c["id"]); cards.append(c)
+        read = store.precheck(rid, [{"id": c["id"], "location": c["location"]} for c in cards])
+        full = bool(pages) and len(guest.parse_search(pages[-1])) >= guest.PER_REQUEST
+        return jsonify(ids=[c["id"] for c in cards], read=read, has_more=full,
+                       locations={c["id"]: c["location"] for c in cards})
+
+    @bp.post("/guest_job/<rid>")
+    def guest_job(rid):
+        b = body()
+        if not _ok_id(rid):
+            return jsonify(continue_=False)
+        jid, page = str(b.get("job_id") or ""), str(b.get("html") or "")
+        if not page:
+            return jsonify(continue_=store.add_card(rid, jid, None, str(b.get("error") or "public job page did not load")))
+        d = guest.parse_job(page)
+        if not d["location"] and b.get("card_location"):
+            d["location"] = str(b["card_location"])[:120]
+        if not d["job_title"] or not d["job_description"]:
+            return jsonify(continue_=store.add_card(rid, jid, None, "public job page had no title/description"))
+        return jsonify(continue_=store.add_card(rid, jid, d))
+
+    @bp.post("/guest_company/<rid>")
+    def guest_company(rid):
+        b = body()
+        if _ok_id(rid):
+            page = str(b.get("html") or "")
+            data = guest.parse_company(page) if page else {"status": "error", "note": str(b.get("error") or "page did not load")}
+            store.add_company_result(rid, b.get("company_url"), data)
+        return jsonify(ok=True)
 
     @bp.post("/precheck/<rid>")
     def precheck(rid):

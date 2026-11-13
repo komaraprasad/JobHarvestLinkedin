@@ -75,7 +75,7 @@ def ui_filters(p: SearchParams):
     return out
 
 
-def filter_mismatch(p: SearchParams, tags, location):
+def filter_mismatch(p: SearchParams, tags, location, easy_apply_shown=True):
     """Checks a collected job against the filters that LinkedIn shows on the job itself. Returns the reason it does
     NOT match, or None. A filter is only checked when the job shows that kind of information (never guessed)."""
     tags = {t.lower() for t in tags or []}
@@ -87,7 +87,7 @@ def filter_mismatch(p: SearchParams, tags, location):
     want_type = {JOB_TYPE[j][1].lower() for j in p.job_types if j in JOB_TYPE}
     if want_type and shown_type and not (shown_type & want_type):
         return f"job type is {'/'.join(sorted(shown_type))}, not {'/'.join(sorted(want_type))}"
-    if p.easy_apply and tags and "easy apply" not in tags:
+    if p.easy_apply and easy_apply_shown and tags and "easy apply" not in tags:   # public pages never show it
         return "not Easy Apply"
     names = p.place_names or ([p.location] if p.location.strip() else [])
     if not job_in_places(location, names, p.local_terms):
