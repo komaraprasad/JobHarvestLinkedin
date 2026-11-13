@@ -19,3 +19,9 @@ def test_url_parsing():
     assert "ssl_context" in a
     assert "ssl_context" not in pg_connect_args("postgres://u:p@localhost:5433/x?sslmode=disable")
     assert is_postgres("postgres://x") and is_postgres("postgresql://x") and not is_postgres("C:/out/a.sqlite3")
+
+
+def test_neon_pooler_address_is_replaced_by_direct():
+    a = pg_connect_args("postgresql://u:p@ep-round-dawn-b3tvjyag-pooler.c-4.ap-southeast-1.aws.neon.tech/neondb?sslmode=require")
+    assert a["host"] == "ep-round-dawn-b3tvjyag.c-4.ap-southeast-1.aws.neon.tech"
+    assert pg_connect_args("postgres://u:p@my-pooler.example.com/x")["host"] == "my-pooler.example.com"

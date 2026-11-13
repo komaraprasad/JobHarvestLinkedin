@@ -111,7 +111,13 @@ def pg_connect_args(url):
     from urllib.parse import parse_qs, unquote, urlsplit
     u = urlsplit(url)
     q = {k: v[-1] for k, v in parse_qs(u.query).items()}
-    args = {"user": unquote(u.username or ""), "password": unquote(u.password or ""), "host": u.hostname or "localhost",
+    host = u.hostname or "localhost"
+    # Neon's pooled address ("ep-xxx-pooler....neon.tech", PgBouncer in transaction mode) can send the parse and
+    # execute steps of one query to different server connections ("unnamed prepared statement does not exist").
+    # This app keeps one long-lived connection, so it needs no pooler: use the direct address of the same database.
+    if host.endswith(".neon.tech"):
+        host = host.replace("-pooler.", ".", 1)
+    args = {"user": unquote(u.username or ""), "password": unquote(u.password or ""), "host": host,
             "port": u.port or 5432, "database": (u.path or "/").lstrip("/") or "postgres", "timeout": 30}
     if q.get("sslmode", "require") != "disable":
         args["ssl_context"] = ssl.create_default_context()
