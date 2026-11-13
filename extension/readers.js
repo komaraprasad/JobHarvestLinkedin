@@ -138,10 +138,14 @@
   };
 
   // ---------- one job: click its card, wait (in the worker) for the panel, then read ----------
-  const titleLink = id => [...document.querySelectorAll(`a[href*='/jobs/view/${id}']`)].find(a => clean(a.textContent)) || null;
+  // A job's own page (/jobs/view/<id>/, used when the search page does not draw the job): the title is the <h1>.
+  const viewPageId = () => (location.pathname.match(/\/jobs\/view\/(\d+)/) || [])[1] || null;
+  const titleLink = id => [...document.querySelectorAll(`a[href*='/jobs/view/${id}']`)].find(a => clean(a.textContent)) ||
+    (viewPageId() === id ? [...document.querySelectorAll("main h1, h1")].find(h => clean(h.textContent)) || null : null);
   const shownJobId = () => {
     const u = new URL(location.href).searchParams.get("currentJobId");
     if (u) return u;
+    if (viewPageId()) return viewPageId();
     const a = q(C.SEL.paneJobLink);
     const m = a && a.href.match(/\/jobs\/view\/(\d+)/);
     return m ? m[1] : null;

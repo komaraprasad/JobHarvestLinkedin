@@ -6,7 +6,7 @@ self.LJT_CONFIG = {
   // Using another host? Add it here AND to host_permissions + content_scripts.matches in manifest.json.
   DASHBOARDS: [/^http:\/\/(127\.0\.0\.1|localhost):5000$/, /^https:\/\/[a-z0-9-]+\.onrender\.com$/],
   TAB_GROUP_TITLE: "JobHarvest",
-  MAX_PARALLEL_TABS: 8,                          // upper limit when a run has many jobs to read
+  MAX_PARALLEL_TABS: 3,                          // (was 8) fewer windows at once = gentler on LinkedIn                          // upper limit when a run has many jobs to read
   PARALLEL_TABS: 3,                              // LinkedIn tabs reading jobs at the same time (1 = one at a time)
 
   PACING: {

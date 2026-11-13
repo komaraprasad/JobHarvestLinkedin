@@ -255,6 +255,28 @@ const placeLike = loc => !!loc && (/,|\((remote|hybrid|on-site)\)/i.test(loc) ||
 // Diagnosis: the first job of a run read without any hiring contact is saved (panel + what the people section held),
 // so the reader can be matched to LinkedIn's real markup.
 const contactNoted = new Set();
+// Fallback when LinkedIn's search page does not draw a job: open the job's OWN page (/jobs/view/<id>/) in this tab
+// and read it there with the same readers. Returns the data, {stop} on a LinkedIn warning, or null (+ a snapshot).
+async function readJobPage(rid, tab, id) {
+  if (!(await navigate(tab, `https://www.linkedin.com/jobs/view/${id}/`))) return null;
+  const shown = await waitUntil(tab, "__ljtPaneReady", [id], 15000);
+  if (shown.stop) return { stop: shown };
+  if (!shown.ok) { await snapshot(rid, tab, "job-page"); return null; }
+  await sleep(C.PACING.settleMs);
+  if (await call(tab, "__ljtExpandDescription").catch(() => false)) await sleep(400);
+  await loadSections(rid, tab, id);
+  const data = await call(tab, "__ljtReadPane", [id]).catch(() => null);
+  if (!data || !data.job_title || !data.job_description) { await snapshot(rid, tab, "job-page"); return null; }
+  await noteContacts(rid, tab, id, data);
+  return data;
+}
+let fallbackTab = null;   // one reader window for job pages, opened when first needed, closed when the run ends
+async function fallbackReader(mainTab) {
+  if (fallbackTab && await chrome.tabs.get(fallbackTab).catch(() => null)) return fallbackTab;
+  fallbackTab = (await openWorkerTabs(mainTab, 1))[0] || null;
+  return fallbackTab;
+}
+
 async function noteContacts(rid, tab, id, data) {
   if (!data || data.contact_profile_links || contactNoted.has(rid)) return;
   contactNoted.add(rid);
@@ -365,7 +387,13 @@ async function doSearchPage(rid, t, tabId) {
         if (!(await navigate(wt, u.toString()))) { retry.push(id); continue; }
         const shown = await waitUntil(wt, "__ljtPaneReady", [id], 12000);
         if (shown.stop) { stopped = shown; break; }
-        if (!shown.ok) { retry.push(id); continue; }
+        if (!shown.ok) {   // search page did not draw this job: read it on its own page in this window
+          const d = await readJobPage(rid, wt, id);
+          if (d && d.stop) { stopped = d.stop; break; }
+          if (d) { if (placeLike(cardLoc[id])) d.location = cardLoc[id]; if (!stopped && !enough) await send({ job_id: id, data: d }); }
+          else retry.push(id);
+          continue;
+        }
         await sleep(C.PACING.settleMs);
         const skipNow = await quickSkip(rid, wt, id, placeLike(cardLoc[id]) ? cardLoc[id] : "");
         if (skipNow) { if (!stopped && !enough) await send({ job_id: id, data: skipNow }); continue; }
@@ -400,7 +428,14 @@ async function doSearchPage(rid, t, tabId) {
     else {
       const shown = await waitUntil(tabId, "__ljtPaneReady", [id]);
       if (shown.stop) { await pageDone(list.ids, n, false); return shown; }
-      if (!shown.ok) { res = { job_id: id, error: "detail panel did not show this job" }; await snapshot(rid, tabId, "detail-panel"); }
+      if (!shown.ok) {
+        await snapshot(rid, tabId, "detail-panel");
+        const ft = await fallbackReader(tabId);
+        const d = ft ? await readJobPage(rid, ft, id) : null;
+        if (d && d.stop) { await pageDone(list.ids, n, false); return d.stop; }
+        res = d ? { job_id: id, data: d } : { job_id: id, error: "job did not show on the search page or on its own page" };
+        if (d) await log(rid, `Job ${id}: read from its own page (the search page did not show it).`);
+      }
       else {
         await sleep(C.PACING.settleMs); // let description, hiring team and company box draw
         const skipNow = await quickSkip(rid, tabId, id, "");

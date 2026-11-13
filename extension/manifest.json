@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "JobHarvest",
-  "version": "3.10.0",
+  "version": "3.10.1",
   "description": "Works with the local JobHarvest dashboard: opens your LinkedIn job search with the filters you chose, reads each job with pauses and strict limits, and returns the results for Excel/CSV export.",
   "permissions": [
     "activeTab",
