@@ -120,7 +120,13 @@
   self.__ljtListCards = function () {
     const jobs = findJobs();
     const ids = [...jobs.keys()];
-    const cards = ids.map(id => ({ id, location: cardLocation(jobs.get(id)) }));
+    // LinkedIn's AI search pads the list after a line "We found more results related to your search that may not be
+    // exact matches…". Cards BELOW that line are marked related:true (the server then opens them only when the card
+    // itself shows the workplace asked for). Seen on the real page 2026-11-13.
+    const divider = [...document.querySelectorAll("p, span, h2, h3, div")].find(e =>
+      e.children.length === 0 && /may not be exact matches/i.test(e.textContent || ""));
+    const below = el => !!divider && !!(divider.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING);
+    const cards = ids.map(id => ({ id, location: cardLocation(jobs.get(id)), related: below(jobs.get(id)) }));
     // LinkedIn's own total ("22 results"): when every result is already on this page, there is no page 2.
     const m = /^\s*([\d,]+)\+? results?\s*$/im.exec(document.body.innerText || "");
     const total = m ? parseInt(m[1].replace(/,/g, ""), 10) : 0;

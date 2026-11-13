@@ -514,3 +514,26 @@ def test_quickcheck_flags_a_wrong_job_type_from_the_panel_labels_only(mk):
     c.post(f"/api/ext/card/{rid}", json={"job_id": "4500000001", "data": {**job(1), "pane_tags": ["Remote", "Contract"]}})
     st = c.get(f"/api/ext/status/{rid}").get_json()
     assert st["count"] == 0 and st["jobs"]["skipped"] == 1
+
+
+def test_linkedin_padding_below_not_exact_matches_is_opened_only_when_card_shows_the_workplace(mk):
+    """Real page 2026-11-13: under 'more results ... may not be exact matches' LinkedIn pads with jobs that ignore the
+    Workplace filter. Those are opened only when the card says the wanted workplace; exact matches are unchanged."""
+    c = mk()
+    rid = start(c, max_jobs="10", work_types=["remote"])
+    nxt(c, rid)
+    cards = [{"id": "4200000001", "location": "India (Remote)", "related": False},
+             {"id": "4200000002", "location": "Bengaluru", "related": False},          # exact match, unlabelled: opened
+             {"id": "4200000003", "location": "", "related": True},                   # padding, nothing shown: skipped
+             {"id": "4200000004", "location": "Bengaluru", "related": True},          # padding, no workplace: skipped
+             {"id": "4200000005", "location": "Bengaluru (Remote)", "related": True}]  # padding but says Remote: opened
+    assert c.post(f"/api/ext/precheck/{rid}", json={"cards": cards}).get_json()["read"] == ["4200000001", "4200000002", "4200000005"]
+    assert "not an exact match" in "\n".join(c.get(f"/api/ext/status/{rid}").get_json()["log"])
+
+
+def test_padding_is_opened_as_before_when_no_workplace_filter(mk):
+    c = mk()
+    rid = start(c, max_jobs="10", work_types=[], location="")
+    nxt(c, rid)
+    cards = [{"id": "4300000001", "location": "", "related": True}, {"id": "4300000002", "location": "Bengaluru", "related": True}]
+    assert c.post(f"/api/ext/precheck/{rid}", json={"cards": cards}).get_json()["read"] == ["4300000001", "4300000002"]

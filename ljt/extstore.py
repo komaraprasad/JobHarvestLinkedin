@@ -361,6 +361,15 @@ class ExtStore:
                                     (run_id, jid, f"workplace is {shown.group(1).lower()}, not {'/'.join(sorted(want))}", seq))
                     self.log(run_id, f"Job {jid}: skipped without opening (card says {shown.group(1)}).")
                     continue
+                # LinkedIn's padding ("more results related to your search that may not be exact matches"): with a
+                # workplace filter, open such a job only when its card itself shows a wanted workplace. Unlabelled
+                # padding was ~40 openings per run that all came back on-site/hybrid (run 0da9921f45, 2026-11-13).
+                if c.get("related") and want and not (shown and shown.group(1).lower() in want):
+                    seq += 1
+                    self.db.execute("INSERT INTO run_jobs VALUES (?,?, 'skipped', ?, ?)",
+                                    (run_id, jid, f"LinkedIn lists it as not an exact match; card does not say {'/'.join(sorted(want))}", seq))
+                    self.log(run_id, f"Job {jid}: skipped without opening (LinkedIn: not an exact match).")
+                    continue
                 # Only a real place line ("Pune, Maharashtra, India", "India (Remote)") is trusted here; a company line
                 # such as "Accenture in India" is not a location, so that job is opened and checked on its own page.
                 place_like = ("," in loc or bool(shown) or
