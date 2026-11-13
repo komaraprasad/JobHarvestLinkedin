@@ -4,7 +4,7 @@ services:
     name: jobharvest
     runtime: python
     plan: free
-    region: ohio          # same region as the Neon database (us-east-2): every query is a round trip
+    region: singapore     # same region as the Neon database (ap-southeast-1) and close to India
     buildCommand: pip install -r requirements.txt
     # ONE worker on purpose: the run lock and limits live in this process. Threads serve the dashboard + extension.
     startCommand: gunicorn wsgi:app --workers 1 --threads 8 --timeout 120 --bind 0.0.0.0:$PORT
