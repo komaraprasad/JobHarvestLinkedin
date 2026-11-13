@@ -12,7 +12,7 @@ Two packages - use the first one that runs on your PC:
    (If Windows SmartScreen warns about an unknown app: More info -> Run anyway.)
 3. Install the extension once: in the dashboard download **extension.zip** (or http://127.0.0.1:5000/extension.zip),
    unzip it, open `edge://extensions` (or `chrome://extensions`), turn on **Developer mode**, **Load unpacked**,
-   select the unzipped `jobharvest-extension` folder.
+   select the unzipped folder (the one that contains manifest.json).
 4. Sign in to LinkedIn in that same browser, reload the dashboard: it must say **Extension connected**.
 5. Enter role, location, filters and number of jobs (start with 10), press **Start**, download Excel/CSV at the end.
 

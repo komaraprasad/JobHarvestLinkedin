@@ -65,7 +65,7 @@ def create_app(db_path=None, limits=None, out_dir=None):
         with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
             for name in sorted(os.listdir(folder)):
                 if os.path.isfile(os.path.join(folder, name)):
-                    z.write(os.path.join(folder, name), f"jobharvest-extension/{name}")
+                    z.write(os.path.join(folder, name), name)   # flat: the unzipped folder is the one to Load unpacked
         buf.seek(0)
         return send_file(buf, as_attachment=True, download_name=f"jobharvest-extension-v{version}.zip", mimetype="application/zip")
 
