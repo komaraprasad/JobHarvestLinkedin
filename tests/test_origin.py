@@ -36,3 +36,10 @@ def test_render_without_database_url_refuses_to_start(monkeypatch, tmp_path):
     monkeypatch.delenv("DATABASE_URL", raising=False)
     with pytest.raises(RuntimeError, match="DATABASE_URL"):
         create_app(out_dir=str(tmp_path))
+
+
+def test_dashboard_knows_the_shipped_extension_version(client):
+    import json, os
+    v = json.load(open(os.path.join(os.path.dirname(__file__), "..", "extension", "manifest.json"), encoding="utf-8"))["version"]
+    html = client.get("/").get_data(as_text=True)
+    assert f'const EXT_LATEST = "{v}";' in html and 'id="extUpdate"' in html

@@ -51,9 +51,18 @@ def create_app(db_path=None, limits=None, out_dir=None):
         if request.method not in ("GET", "HEAD", "OPTIONS") and not _origin_ok(request.headers.get("Origin"), own):
             abort(403)
 
+    def ext_version():
+        """Version of the extension this server ships (/extension.zip); the dashboard asks older ones to update."""
+        try:
+            with open(os.path.join(RES_DIR, "extension", "manifest.json"), encoding="utf-8") as f:
+                return json.load(f).get("version", "")
+        except (OSError, ValueError):
+            return ""
+
     @app.get("/")
     def index():
-        return render_template("index.html", work=WORK_TYPE, dates=DATE_POSTED, exp=EXPERIENCE, jobtypes=JOB_TYPE, sorts=SORT)
+        return render_template("index.html", work=WORK_TYPE, dates=DATE_POSTED, exp=EXPERIENCE, jobtypes=JOB_TYPE, sorts=SORT,
+                               ext_version=ext_version())
 
     @app.get("/results")
     def results_page():

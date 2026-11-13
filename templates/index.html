@@ -143,6 +143,10 @@ button:disabled{opacity:.45;cursor:not-allowed;animation:none}
 .extsetup ol{margin:6px 0 8px 18px;padding:0}.extsetup li{margin:3px 0}
 .extsetup code{background:var(--brand-soft);padding:1px 6px;border-radius:6px;font-size:12px}
 .extsetup .es-note{color:var(--muted);font-size:12px}
+.extstate.warn{background:var(--warn-soft);color:var(--warn);border-color:color-mix(in srgb,var(--warn) 25%,transparent)}
+.extupdate{display:none;font-size:12.5px;padding:10px 12px;border-radius:11px;margin-bottom:8px;background:var(--warn-soft);color:var(--ink);border:1px solid color-mix(in srgb,var(--warn) 25%,transparent)}
+.extupdate.show{display:block}.extupdate ol{margin:6px 0 0;padding-left:18px}.extupdate li{margin:2px 0}
+.extupdate a.es-dl{display:inline-block;margin-top:6px}
 .extstate.bad{background:var(--bad-soft);color:var(--bad);border-color:color-mix(in srgb,var(--bad) 25%,transparent)}
 @keyframes pulse{0%{box-shadow:0 0 0 0 currentColor}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
 
@@ -322,6 +326,14 @@ footer{color:var(--dim);font-size:12px;text-align:center;padding:0 0 30px}
   <section class="card sticky">
     <div class="card-h"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M22 3H2l8 9.5V19l4 2v-8.5z"/></svg></span><h2>New harvest</h2></div>
     <div class="extstate bad" id="extState">Extension not detected. Install/enable it and sign in to LinkedIn in this browser, then reload this page.</div>
+    <div class="extupdate" id="extUpdate" role="status">
+      <b>A new version of the extension is available.</b> Runs still work, but update to get the latest fixes:
+      <ol>
+        <li><a class="es-dl" href="/extension.zip" download>⬇ Download extension (.zip)</a> and unzip it (replace the old folder's files).</li>
+        <li>Open <code>edge://extensions</code> (Chrome: <code>chrome://extensions</code>) and press <b>Reload</b> on JobHarvest.</li>
+        <li>Come back here and press <b>F5</b>.</li>
+      </ol>
+    </div>
     <div class="extsetup" id="extSetup">
       <div class="es-head"><b>Set up the JobHarvest extension</b><span>One time, about 1 minute. Works in Microsoft Edge and Google Chrome.</span></div>
       <a class="es-dl" href="/extension.zip" download>⬇ Download extension (.zip)</a>
@@ -329,7 +341,7 @@ footer{color:var(--dim);font-size:12px;text-align:center;padding:0 0 30px}
         <li><b>Unzip</b> the downloaded file (right-click → <i>Extract All</i>). Keep the folder somewhere permanent, e.g. Documents.</li>
         <li>Open <code id="extUrl">edge://extensions</code> in a new tab (Chrome: <code>chrome://extensions</code>).</li>
         <li>Turn on <b>Developer mode</b> (Edge: left side · Chrome: top right).</li>
-        <li>Click <b>Load unpacked</b> and choose the <b>jobharvest-extension</b> folder you unzipped.</li>
+        <li>Click <b>Load unpacked</b> and choose the folder you unzipped (the one that contains <code>manifest.json</code>).</li>
         <li>Sign in to <b>LinkedIn</b> in this same browser.</li>
         <li>Come back here and press <b>F5</b>. This box turns green: <i>Extension connected</i>.</li>
       </ol>
@@ -680,13 +692,27 @@ function showAlert(kind, title, items) {
 function finish() { clearInterval(timer); timer = null; $("startBtn").disabled = !extReady; $("stopBtn").disabled = true; }
 
 // ---- extension handshake (through the extension's bridge on this page) ----
+const EXT_LATEST = {{ ext_version|tojson }};   // version in this server's extension/ folder (= /extension.zip)
+function newerVersion(a, b) {                   // true when version a is newer than version b ("3.11.1" vs "3.11.0")
+  const pa = String(a || "").split(".").map(Number), pb = String(b || "").split(".").map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const x = pa[i] || 0, y = pb[i] || 0;
+    if (isNaN(x) || isNaN(y)) return false;
+    if (x !== y) return x > y;
+  }
+  return false;
+}
 window.addEventListener("message", e => {
   if (e.source !== window || !e.data || e.data.source !== "ljt-ext") return;
   if (e.data.type === "ready") {
     extReady = true;
     $("extSetup").classList.add("hide");
-    $("extState").className = "extstate ok";
-    $("extState").textContent = `Extension connected (v${e.data.version})` + (e.data.busy ? " · a run is in progress" : "");
+    // Older than the version this dashboard ships? Say so (runs still work).
+    const old = newerVersion(EXT_LATEST, e.data.version);
+    $("extState").className = "extstate " + (old ? "warn" : "ok");
+    $("extState").textContent = (old ? `Update available: extension v${e.data.version} → v${EXT_LATEST}` : `Extension connected (v${e.data.version})`)
+      + (e.data.busy ? " · a run is in progress" : "");
+    $("extUpdate").classList.toggle("show", old);
     if (!timer) $("startBtn").disabled = false;
   } else if (e.data.type === "stale") {
     // The extension was reloaded/updated after this page opened: its old connection is gone.
