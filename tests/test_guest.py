@@ -65,3 +65,15 @@ def test_fast_mode_end_to_end(c):
     assert len(rows) == 1
     row = rows[0]
     assert (row["job_title"], row["company_name"], row["company_industry"], row["company_size"]) == ("AI Engineer", "NextNation", "Education", "51-200")
+
+
+def test_job_poster_is_taken_as_hiring_contact():
+    """Real public page with 'Direct message the job poster from UST' (job 4414461108, 2026-11-13)."""
+    d = guest.parse_job(read("guest_job_poster.html"))
+    assert d["contact_profile_links"] == "https://www.linkedin.com/in/nitin-patil-ust/"
+    assert "no job poster" not in d["data_notes"]
+
+
+def test_no_poster_means_blank_contacts_with_a_note():
+    d = guest.parse_job(read("guest_job.html"))
+    assert d["contact_profile_links"] == "" and "shows no job poster" in d["data_notes"]

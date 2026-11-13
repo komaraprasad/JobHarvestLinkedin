@@ -74,6 +74,30 @@ def parse_search(page):
     return cards
 
 
+def _profile(url):
+    """'https://in.linkedin.com/in/nitin-patil-ust?trk=x' -> 'https://www.linkedin.com/in/nitin-patil-ust/'."""
+    m = re.search(r"linkedin\.com/in/([A-Za-z0-9_%\-]+)", url or "")
+    return f"https://www.linkedin.com/in/{m.group(1)}/" if m else ""
+
+
+def contacts(page):
+    """Hiring contacts shown on the public job page: the job poster ('Direct message the job poster from …') and
+    profile links written in the description. Same sources as the signed-in reader; nothing is guessed."""
+    out = []
+    m = re.search(r'<div class="message-the-recruiter">(.*?)</section>', page or "", re.S)
+    if m:
+        for href in re.findall(r'<a class="base-card__full-link[^"]*"[^>]*href="([^"]+)"', m.group(1)):
+            p = _profile(href)
+            if p and p not in out:
+                out.append(p)
+    d = re.search(r'show-more-less-html__markup[^>]*>(.*?)</div>', page or "", re.S)
+    for href in re.findall(r'href="([^"]*linkedin\.com/in/[^"]+)"', d.group(1) if d else ""):
+        p = _profile(_html.unescape(href))
+        if p and p not in out:
+            out.append(p)
+    return out
+
+
 def parse_job(page):
     """One job from its guest page, in the same shape the extension's page reader sends (see ExtStore.add_card)."""
     criteria = {_html.unescape(k.strip()): _html.unescape(re.sub(r"\s+", " ", v)).strip()
@@ -83,7 +107,9 @@ def parse_job(page):
     description = _text(m.group(1)) if m else ""
     company_url = _one(r'topcard__org-name-link[^>]*href="([^"?]+)', page)
     tags = [criteria["Employment type"]] if criteria.get("Employment type") else []
-    notes = ["read from LinkedIn's public job page (hiring team and workplace are not shown there)"]
+    people = contacts(page)
+    notes = ["read from LinkedIn's public job page (workplace is not shown there"
+             + ("" if people else "; this job shows no job poster") + ")"]
     title = _one(r'topcard__title[^>]*>(.*?)<', page)
     if not title:
         notes.append("job title not found")
@@ -99,7 +125,7 @@ def parse_job(page):
         "posted": _one(r'posted-time-ago__text[^>]*>(.*?)<', page),
         "seniority": criteria.get("Seniority level", ""),
         "job_industry": criteria.get("Industries", ""),
-        "contact_profile_links": "",
+        "contact_profile_links": "; ".join(people),
         "data_notes": "; ".join(notes),
         "source": "guest",
     }
