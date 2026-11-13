@@ -29,3 +29,10 @@ def test_hosted_dashboard_own_origin_is_allowed_behind_proxy(client):
     proxy = {"X-Forwarded-Proto": "https", "X-Forwarded-Host": "jobharvest.onrender.com"}
     assert client.post("/api/ext/start", data={}, headers={**proxy, "Origin": "https://jobharvest.onrender.com"}).status_code == 400
     assert client.post("/api/ext/start", data={}, headers={**proxy, "Origin": "https://other.onrender.com"}).status_code == 403
+
+
+def test_render_without_database_url_refuses_to_start(monkeypatch, tmp_path):
+    monkeypatch.setenv("RENDER", "true")
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    with pytest.raises(RuntimeError, match="DATABASE_URL"):
+        create_app(out_dir=str(tmp_path))

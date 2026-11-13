@@ -38,6 +38,10 @@ def create_app(db_path=None, limits=None, out_dir=None):
     out = out_dir or OUT_DIR
     os.makedirs(out, exist_ok=True)
     # DATABASE_URL (postgres://...) when hosted; otherwise a local SQLite file in output/.
+    # On Render (it sets RENDER=true) a local file would be wiped on every restart: refuse to start instead.
+    if not db_path and os.environ.get("RENDER") and not os.environ.get("DATABASE_URL", "").startswith(("postgres://", "postgresql://")):
+        raise RuntimeError("DATABASE_URL is missing or not a postgresql:// address. Set it in Render > Environment "
+                           "(Neon > Connect > connection string), then redeploy.")
     store = ExtStore(db_path or os.environ.get("DATABASE_URL") or os.path.join(out, "signedin.sqlite3"), limits)
     app.register_blueprint(create_blueprint(store, out))
 
